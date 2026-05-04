@@ -3,88 +3,114 @@ using Il2CppSLZ.Marrow;
 using Il2CppSLZ.Marrow.Interaction;
 using Il2CppSLZ.Marrow.Utilities;
 using Il2CppSLZ.VRMK;
+using MelonLoader;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace FingerPhysics
 {
+    public class BitsAndBobs
+    {
+        public Avatar lastSetAvatar;
+        public PhysicalFingersController leftHandFingers;
+        public PhysicalFingersController rightHandFingers;
+    }
+
     [HarmonyPatch(typeof(ArtRig))]
     public static class ArtOutputUpdatePatch
     {
-        public static Dictionary<ArtRig, Avatar> lastFoundAvatars = [];
+        public static Dictionary<ArtRig, BitsAndBobs> artRigToUsefulReferences = [];
 
         [HarmonyPatch(nameof(ArtRig.ArtOutputLateUpdate))]
         [HarmonyPostfix]
         public static void LateUpdatePostfix(ArtRig __instance)
         {
-            foreach (var controller in __instance.GetComponentInParent<PhysicsRig>().GetComponentsInChildren<PhysicalFingersController>())
+            if (!artRigToUsefulReferences.ContainsKey(__instance))
             {
-                controller.OnApplyPoseToTransforms();
-                var lastFoundAvatar = lastFoundAvatars[__instance];
-                if (lastFoundAvatar == null) continue;
-                if(controller.handedness == Handedness.LEFT)
-                {
-                    PhysicalFinger currentFinger = controller.index;
-                    lastFoundAvatar.artTransforms.leftIndexProximal.SetPositionAndRotation(currentFinger.proximalArtOffset.position, currentFinger.proximalArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.leftIndexIntermediate.SetPositionAndRotation(currentFinger.intermediateArtOffset.position, currentFinger.intermediateArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.leftIndexDistal.SetPositionAndRotation(currentFinger.distalArtOffset.position, currentFinger.distalArtOffset.rotation);
-
-                    currentFinger = controller.middle;
-                    lastFoundAvatar.artTransforms.leftMiddleProximal.SetPositionAndRotation(currentFinger.proximalArtOffset.position, currentFinger.proximalArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.leftMiddleIntermediate.SetPositionAndRotation(currentFinger.intermediateArtOffset.position, currentFinger.intermediateArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.leftMiddleDistal.SetPositionAndRotation(currentFinger.distalArtOffset.position, currentFinger.distalArtOffset.rotation);
-                    
-                    currentFinger = controller.ring;
-                    lastFoundAvatar.artTransforms.leftRingProximal.SetPositionAndRotation(currentFinger.proximalArtOffset.position, currentFinger.proximalArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.leftRingIntermediate.SetPositionAndRotation(currentFinger.intermediateArtOffset.position, currentFinger.intermediateArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.leftRingDistal.SetPositionAndRotation(currentFinger.distalArtOffset.position, currentFinger.distalArtOffset.rotation);
-                    
-                    currentFinger = controller.pinky;
-                    lastFoundAvatar.artTransforms.leftLittleProximal.SetPositionAndRotation(currentFinger.proximalArtOffset.position, currentFinger.proximalArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.leftLittleIntermediate.SetPositionAndRotation(currentFinger.intermediateArtOffset.position, currentFinger.intermediateArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.leftLittleDistal.SetPositionAndRotation(currentFinger.distalArtOffset.position, currentFinger.distalArtOffset.rotation);
-                    
-                    currentFinger = controller.thumb;
-                    lastFoundAvatar.artTransforms.leftThumbProximal.SetPositionAndRotation(currentFinger.proximalArtOffset.position, currentFinger.proximalArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.leftThumbIntermediate.SetPositionAndRotation(currentFinger.intermediateArtOffset.position, currentFinger.intermediateArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.leftThumbDistal.SetPositionAndRotation(currentFinger.distalArtOffset.position, currentFinger.distalArtOffset.rotation);
-                }
-                else
-                {
-                    PhysicalFinger currentFinger = controller.index;
-                    lastFoundAvatar.artTransforms.rightIndexProximal.SetPositionAndRotation(currentFinger.proximalArtOffset.position, currentFinger.proximalArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.rightIndexIntermediate.SetPositionAndRotation(currentFinger.intermediateArtOffset.position, currentFinger.intermediateArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.rightIndexDistal.SetPositionAndRotation(currentFinger.distalArtOffset.position, currentFinger.distalArtOffset.rotation);
-
-                    currentFinger = controller.middle;
-                    lastFoundAvatar.artTransforms.rightMiddleProximal.SetPositionAndRotation(currentFinger.proximalArtOffset.position, currentFinger.proximalArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.rightMiddleIntermediate.SetPositionAndRotation(currentFinger.intermediateArtOffset.position, currentFinger.intermediateArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.rightMiddleDistal.SetPositionAndRotation(currentFinger.distalArtOffset.position, currentFinger.distalArtOffset.rotation);
-
-                    currentFinger = controller.ring;
-                    lastFoundAvatar.artTransforms.rightRingProximal.SetPositionAndRotation(currentFinger.proximalArtOffset.position, currentFinger.proximalArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.rightRingIntermediate.SetPositionAndRotation(currentFinger.intermediateArtOffset.position, currentFinger.intermediateArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.rightRingDistal.SetPositionAndRotation(currentFinger.distalArtOffset.position, currentFinger.distalArtOffset.rotation);
-
-                    currentFinger = controller.pinky;
-                    lastFoundAvatar.artTransforms.rightLittleProximal.SetPositionAndRotation(currentFinger.proximalArtOffset.position, currentFinger.proximalArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.rightLittleIntermediate.SetPositionAndRotation(currentFinger.intermediateArtOffset.position, currentFinger.intermediateArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.rightLittleDistal.SetPositionAndRotation(currentFinger.distalArtOffset.position, currentFinger.distalArtOffset.rotation);
-
-                    currentFinger = controller.thumb;
-                    lastFoundAvatar.artTransforms.rightThumbProximal.SetPositionAndRotation(currentFinger.proximalArtOffset.position, currentFinger.proximalArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.rightThumbIntermediate.SetPositionAndRotation(currentFinger.intermediateArtOffset.position, currentFinger.intermediateArtOffset.rotation);
-                    lastFoundAvatar.artTransforms.rightThumbDistal.SetPositionAndRotation(currentFinger.distalArtOffset.position, currentFinger.distalArtOffset.rotation);
-
-                }
+                MelonLogger.Msg("No useful references for the Art Rig. Cant do anything yo");
+                return;
             }
+
+            BitsAndBobs refs = artRigToUsefulReferences[__instance];
+
+            refs.leftHandFingers.OnApplyPoseToTransforms();
+            refs.rightHandFingers.OnApplyPoseToTransforms();
+
+            if (refs.lastSetAvatar == null)
+            {
+                MelonLogger.Msg("Havent found an avatar yet for this Art Rig. Bruh");
+                return;
+            }
+
+            var lastFoundAvatar = refs.lastSetAvatar;
+
+            CopyFingerToTransforms(refs.leftHandFingers.index,
+                lastFoundAvatar.artTransforms.leftIndexProximal,
+                lastFoundAvatar.artTransforms.leftIndexIntermediate,
+                lastFoundAvatar.artTransforms.leftIndexDistal);
+
+            CopyFingerToTransforms(refs.leftHandFingers.middle,
+                lastFoundAvatar.artTransforms.leftMiddleProximal,
+                lastFoundAvatar.artTransforms.leftMiddleIntermediate,
+                lastFoundAvatar.artTransforms.leftMiddleDistal);
+
+            CopyFingerToTransforms(refs.leftHandFingers.ring,
+                lastFoundAvatar.artTransforms.leftRingProximal,
+                lastFoundAvatar.artTransforms.leftRingIntermediate,
+                lastFoundAvatar.artTransforms.leftRingDistal);
+
+            CopyFingerToTransforms(refs.leftHandFingers.pinky,
+                lastFoundAvatar.artTransforms.leftLittleProximal,
+                lastFoundAvatar.artTransforms.leftLittleIntermediate,
+                lastFoundAvatar.artTransforms.leftLittleDistal);
+
+            CopyFingerToTransforms(refs.leftHandFingers.thumb,
+                lastFoundAvatar.artTransforms.leftThumbProximal,
+                lastFoundAvatar.artTransforms.leftThumbIntermediate,
+                lastFoundAvatar.artTransforms.leftThumbDistal);
+
+
+            CopyFingerToTransforms(refs.rightHandFingers.index,
+                lastFoundAvatar.artTransforms.rightIndexProximal,
+                lastFoundAvatar.artTransforms.rightIndexIntermediate,
+                lastFoundAvatar.artTransforms.rightIndexDistal);
+
+            CopyFingerToTransforms(refs.rightHandFingers.middle,
+                lastFoundAvatar.artTransforms.rightMiddleProximal,
+                lastFoundAvatar.artTransforms.rightMiddleIntermediate,
+                lastFoundAvatar.artTransforms.rightMiddleDistal);
+
+            CopyFingerToTransforms(refs.rightHandFingers.ring,
+                lastFoundAvatar.artTransforms.rightRingProximal,
+                lastFoundAvatar.artTransforms.rightRingIntermediate,
+                lastFoundAvatar.artTransforms.rightRingDistal);
+
+            CopyFingerToTransforms(refs.rightHandFingers.pinky,
+                lastFoundAvatar.artTransforms.rightLittleProximal,
+                lastFoundAvatar.artTransforms.rightLittleIntermediate,
+                lastFoundAvatar.artTransforms.rightLittleDistal);
+
+            CopyFingerToTransforms(refs.rightHandFingers.thumb, 
+                lastFoundAvatar.artTransforms.rightThumbProximal,
+                lastFoundAvatar.artTransforms.rightThumbIntermediate, 
+                lastFoundAvatar.artTransforms.rightThumbDistal);
+        }
+
+        public static void CopyFingerToTransforms(PhysicalFinger finger, Transform proximal, Transform intermediate, Transform distal)
+        {
+            proximal.SetPositionAndRotation(finger.proximalArtOffset.position, finger.proximalArtOffset.rotation);
+            intermediate.SetPositionAndRotation(finger.intermediateArtOffset.position, finger.intermediateArtOffset.rotation);
+            distal.SetPositionAndRotation(finger.distalArtOffset.position, finger.distalArtOffset.rotation);
         }
 
         [HarmonyPatch(nameof(ArtRig.SetArtOutputAvatar))]
         [HarmonyPostfix]
         public static void SetAvatarPostfix(ArtRig __instance, Avatar avatar)
         {
-            lastFoundAvatars[__instance] = avatar;
-            foreach( var controller in __instance.GetComponentInParent<PhysicsRig>().GetComponentsInChildren<PhysicalFingersController>())
+            MelonLogger.Msg("Set Avatar Postfix is Called. Avatar has changed, updating cache with the thing");
+            artRigToUsefulReferences[__instance].lastSetAvatar = avatar;
+
+            foreach (var controller in __instance.GetComponentInParent<PhysicsRig>().GetComponentsInChildren<PhysicalFingersController>())
             {
                 controller.OnAvatarSwapped(avatar);
             }
@@ -98,10 +124,12 @@ namespace FingerPhysics
         [HarmonyPostfix]
         public static void OnAwake(PhysicsRig __instance)
         {
-            if(Bone_Menu_Creator.ModEnabled)
+            if (Bone_Menu_Creator.ModEnabled)
             {
-                PhysicalFingersController.CreatePhysicalFingers(__instance.leftHand.physHand);
-                PhysicalFingersController.CreatePhysicalFingers(__instance.rightHand.physHand);
+                BitsAndBobs newRig = new BitsAndBobs();
+                newRig.leftHandFingers = PhysicalFingersController.CreatePhysicalFingers(__instance.leftHand.physHand);
+                newRig.rightHandFingers = PhysicalFingersController.CreatePhysicalFingers(__instance.rightHand.physHand);
+                ArtOutputUpdatePatch.artRigToUsefulReferences.Add(__instance.artOutput, newRig);
             }
         }
     }
