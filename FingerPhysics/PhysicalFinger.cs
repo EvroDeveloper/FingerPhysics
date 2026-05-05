@@ -58,7 +58,7 @@ public class PhysicalFinger : MonoBehaviour
         {
             (_, physFinger.proximalBody, physFinger.proximalCol, physFinger.proximalJoint, physFinger.proximalArtOffset) = CreateFingerBone("Proximal", handBody.rbHand, proxTarget, intTarget.localPosition.magnitude, 0.01f, intTarget.localPosition / 2, true, handBody.rbHand.rotation * physFinger.handChildOffsetRotation);
             physFinger.proximalJoint.axis = Vector3.right;
-            physFinger.proximalJoint.angularXMotion = ConfigurableJointMotion.Limited;
+            //physFinger.proximalJoint.angularXMotion = ConfigurableJointMotion.Limited;
             //physFinger.proximalJoint.angularYMotion = ConfigurableJointMotion.Limited;
             physFinger.proximalJoint.highAngularXLimit = new SoftJointLimit()
             {
@@ -80,15 +80,15 @@ public class PhysicalFinger : MonoBehaviour
             //};
             physFinger.proximalJoint.slerpDrive = new JointDrive()
             {
-                positionSpring = 2000f,
-                positionDamper = 200f,
+                positionSpring = 5000f,
+                positionDamper = 100f,
                 maximumForce = physFinger.proximalJoint.slerpDrive.maximumForce
             };
         }
 
         // Create Intermediate Bone
         {
-            (_, physFinger.intermediateBody, physFinger.intermediateCol, physFinger.intermediateJoint, physFinger.intermediateArtOffset) = CreateFingerBone("Intermediate", physFinger.proximalBody, intTarget, distTarget.localPosition.magnitude, 0.01f, distTarget.localPosition / 2, true, handBody.rbHand.rotation * physFinger.handChildOffsetRotation * intTarget.localRotation); 
+            (_, physFinger.intermediateBody, physFinger.intermediateCol, physFinger.intermediateJoint, physFinger.intermediateArtOffset) = CreateFingerBone("Intermediate", physFinger.proximalBody, intTarget, distTarget.localPosition.magnitude, 0.01f, distTarget.localPosition / 2, true, handBody.rbHand.rotation * physFinger.handChildOffsetRotation); 
             physFinger.intermediateJoint.angularXMotion = ConfigurableJointMotion.Limited;
             physFinger.intermediateJoint.angularYMotion = ConfigurableJointMotion.Locked;
             physFinger.intermediateJoint.angularZMotion = ConfigurableJointMotion.Locked;
@@ -98,17 +98,29 @@ public class PhysicalFinger : MonoBehaviour
                 bounciness = 0,
                 contactDistance = 0
             };
+            physFinger.intermediateJoint.lowAngularXLimit = new SoftJointLimit()
+            {
+                limit = -10f,
+                bounciness = 0,
+                contactDistance = 0
+            };
         }
 
         // Create Distal Bone
         {
-            (_, physFinger.distalBody, physFinger.distalCol, physFinger.distalJoint, physFinger.distalArtOffset) = CreateFingerBone("Distal", physFinger.intermediateBody, distTarget, distTarget.localPosition.magnitude, 0.01f, distTarget.localPosition / 2, true, handBody.rbHand.rotation * physFinger.handChildOffsetRotation * intTarget.localRotation * distTarget.localRotation);
+            (_, physFinger.distalBody, physFinger.distalCol, physFinger.distalJoint, physFinger.distalArtOffset) = CreateFingerBone("Distal", physFinger.intermediateBody, distTarget, distTarget.localPosition.magnitude, 0.01f, distTarget.localPosition / 2, true, handBody.rbHand.rotation * physFinger.handChildOffsetRotation);
             physFinger.distalJoint.angularXMotion = ConfigurableJointMotion.Limited;
             physFinger.distalJoint.angularYMotion = ConfigurableJointMotion.Locked;
             physFinger.distalJoint.angularZMotion = ConfigurableJointMotion.Locked;
             physFinger.distalJoint.highAngularXLimit = new SoftJointLimit()
             {
                 limit = 120f,
+                bounciness = 0,
+                contactDistance = 0
+            };
+            physFinger.distalJoint.lowAngularXLimit = new SoftJointLimit()
+            {
+                limit = -10f,
                 bounciness = 0,
                 contactDistance = 0
             };
@@ -148,7 +160,7 @@ public class PhysicalFinger : MonoBehaviour
             boneJoint.rotationDriveMode = RotationDriveMode.Slerp;
             boneJoint.slerpDrive = new JointDrive()
             {
-                positionSpring = 1000f,
+                positionSpring = 2000f,
                 positionDamper = 50f,
                 maximumForce = boneJoint.slerpDrive.maximumForce
             };
