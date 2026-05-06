@@ -19,19 +19,24 @@ namespace FingerPhysics
     [HarmonyPatch(typeof(ArtRig))]
     public static class ArtOutputUpdatePatch
     {
-        public static Dictionary<ArtRig, BitsAndBobs> artRigToUsefulReferences = [];
+        /// <summary>
+        /// Maps ArtRig instance IDs to their associated finger physics data.
+        /// Uses instance IDs instead of Il2Cpp object references to ensure reliable dictionary lookups,
+        /// as Il2Cpp wrapped objects do not have stable hash codes or equality comparisons.
+        /// </summary>
+        public static Dictionary<int, BitsAndBobs> artRigToUsefulReferences = [];
 
         [HarmonyPatch(nameof(ArtRig.ArtOutputLateUpdate))]
         [HarmonyPostfix]
         public static void LateUpdatePostfix(ArtRig __instance)
         {
-            if (!artRigToUsefulReferences.ContainsKey(__instance))
+            int instanceId = __instance.GetInstanceID();
+            if (!artRigToUsefulReferences.ContainsKey(instanceId))
             {
-                MelonLogger.Msg("No useful references for the Art Rig. Cant do anything yo");
                 return;
             }
 
-            BitsAndBobs refs = artRigToUsefulReferences[__instance];
+            BitsAndBobs refs = artRigToUsefulReferences[instanceId];
 
             float distanceToPlayer = Vector3.Distance(__instance.artHead.position, BoneLib.Player.Head.position);
             if (refs.inRangeOfPlayer != (distanceToPlayer < 10f))
@@ -49,7 +54,6 @@ namespace FingerPhysics
 
                 if (refs.lastSetAvatar == null)
                 {
-                    MelonLogger.Msg("Havent found an avatar yet for this Art Rig. Bruh");
                     return;
                 }
                 var lastFoundAvatar = refs.lastSetAvatar;
@@ -121,8 +125,11 @@ namespace FingerPhysics
         [HarmonyPostfix]
         public static void SetAvatarPostfix(ArtRig __instance, Avatar avatar)
         {
-            MelonLogger.Msg("Set Avatar Postfix is Called. Avatar has changed, updating cache with the thing");
-            BitsAndBobs refs = artRigToUsefulReferences[__instance];
+            int instanceId = __instance.GetInstanceID();
+            if (!artRigToUsefulReferences.ContainsKey(instanceId))
+                return;
+                
+            BitsAndBobs refs = artRigToUsefulReferences[instanceId];
             refs.lastSetAvatar = avatar;
 
             refs.leftHandFingers.OnAvatarSwapped(avatar);
@@ -143,12 +150,8 @@ namespace FingerPhysics
                 newRig.leftHandFingers = PhysicalFingersController.CreatePhysicalFingers(__instance.leftHand.physHand);
                 newRig.rightHandFingers = PhysicalFingersController.CreatePhysicalFingers(__instance.rightHand.physHand);
 
-
-                MelonLogger.Msg("Adding THE ART RIG to the DICTIONARY");
-                ArtOutputUpdatePatch.artRigToUsefulReferences.Add(__instance.artOutput, newRig);
-                MelonLogger.Msg("Art Rig has been ADDED to the DICTIONARY. LETS CHECK IT NOW");
-                MelonLogger.Msg("Does the art rig dictionry contain key for it? true or false: " + ArtOutputUpdatePatch.artRigToUsefulReferences.ContainsKey(__instance.artOutput));
-                // The line above returns False on LemonLoader for some ungodly reason. Why is it doing this and how do i fix it.
+                int instanceId = __instance.artOutput.GetInstanceID();
+                ArtOutputUpdatePatch.artRigToUsefulReferences.Add(instanceId, newRig);
             }
         }
     }
@@ -161,7 +164,8 @@ namespace FingerPhysics
             Hand targetHand = __instance.triggerGrip.GetHand();
             ArtRig manager = targetHand.manager.physicsRig.artOutput;
 
-            BitsAndBobs refs = ArtOutputUpdatePatch.artRigToUsefulReferences[manager];
+            int instanceId = manager.GetInstanceID();
+            BitsAndBobs refs = ArtOutputUpdatePatch.artRigToUsefulReferences[instanceId];
             refs.leftHandFingers.SetCollisions(false);
             refs.rightHandFingers.SetCollisions(false);
         }
@@ -174,7 +178,8 @@ namespace FingerPhysics
         {
             ArtRig manager = hand.manager.physicsRig.artOutput;
 
-            BitsAndBobs refs = ArtOutputUpdatePatch.artRigToUsefulReferences[manager];
+            int instanceId = manager.GetInstanceID();
+            BitsAndBobs refs = ArtOutputUpdatePatch.artRigToUsefulReferences[instanceId];
             if (hand.AttachedReceiver != null)
             {
                 refs.leftHandFingers.SetCollisions(refs.leftHandFingers.targetPhysHand.hand.AttachedReceiver == null);
