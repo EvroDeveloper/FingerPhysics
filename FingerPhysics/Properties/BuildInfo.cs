@@ -6,6 +6,6 @@ internal class BuildInfo
     internal const string Description = "Adds Physical Fingers to the RigManager";
     internal const string Author = "EvroDev";
     internal const string Company = "";
-    internal const string Version = "1.1.0";
+    internal const string Version = "1.2.0";
     internal const string DownloadLink = "";
 }
