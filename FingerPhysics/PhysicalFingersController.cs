@@ -95,12 +95,10 @@ public class PhysicalFingersController : MonoBehaviour
 
         bool attached = targetPhysHand.hand.AttachedReceiver != null;
         bool hovering = targetPhysHand.hand.HoveringReceiver != null;
-
-        bool attachedOrHovering = attached || hovering;
-
-        if (_previousAttachedState != (targetPhysHand.hand.AttachedReceiver != null))
+        
+        if (_previousAttachedState != targetPhysHand.hand.HasAttachedObject())
         {
-            _previousAttachedState = (targetPhysHand.hand.AttachedReceiver != null);
+            _previousAttachedState = targetPhysHand.hand.HasAttachedObject();
             if(_previousAttachedState)
             {
                 OnGrabbedInteractable();

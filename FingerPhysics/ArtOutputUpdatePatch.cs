@@ -26,22 +26,22 @@ namespace FingerPhysics
         /// </summary>
         public static Dictionary<int, BitsAndBobs> artRigToUsefulReferences = [];
 
+        public static bool TryGetReferences(ArtRig artRig, out BitsAndBobs references)
+        {
+            return artRigToUsefulReferences.TryGetValue(artRig.GetInstanceID(), out references);
+        }
+
         [HarmonyPatch(nameof(ArtRig.ArtOutputLateUpdate))]
         [HarmonyPostfix]
         public static void LateUpdatePostfix(ArtRig __instance)
         {
-            int instanceId = __instance.GetInstanceID();
-            if (!artRigToUsefulReferences.ContainsKey(instanceId))
-            {
-                return;
-            }
-
-            BitsAndBobs refs = artRigToUsefulReferences[instanceId];
+            if(!TryGetReferences(__instance, out var refs)) return;
 
             float distanceToPlayer = Vector3.Distance(__instance.artHead.position, BoneLib.Player.Head.position);
-            if (refs.inRangeOfPlayer != (distanceToPlayer < 10f))
+            bool inRange = distanceToPlayer < 10f;
+            if (refs.inRangeOfPlayer != inRange)
             {
-                refs.inRangeOfPlayer = (distanceToPlayer < 10f);
+                refs.inRangeOfPlayer = inRange;
                 refs.leftHandFingers.OnPlayerRangeChanged(refs.inRangeOfPlayer);
                 refs.rightHandFingers.OnPlayerRangeChanged(refs.inRangeOfPlayer);
                 // Update player range things
@@ -125,66 +125,11 @@ namespace FingerPhysics
         [HarmonyPostfix]
         public static void SetAvatarPostfix(ArtRig __instance, Avatar avatar)
         {
-            int instanceId = __instance.GetInstanceID();
-            if (!artRigToUsefulReferences.ContainsKey(instanceId))
-                return;
-                
-            BitsAndBobs refs = artRigToUsefulReferences[instanceId];
+            if(!TryGetReferences(__instance, out var refs)) return;
             refs.lastSetAvatar = avatar;
 
             refs.leftHandFingers.OnAvatarSwapped(avatar);
             refs.rightHandFingers.OnAvatarSwapped(avatar);
-        }
-    }
-
-    [HarmonyPatch(typeof(PhysicsRig))]
-    public static class PhysRigPatches
-    {
-        [HarmonyPatch(nameof(PhysicsRig.OnAwake))]
-        [HarmonyPostfix]
-        public static void OnAwake(PhysicsRig __instance)
-        {
-            if (Bone_Menu_Creator.ModEnabled)
-            {
-                BitsAndBobs newRig = new BitsAndBobs();
-                newRig.leftHandFingers = PhysicalFingersController.CreatePhysicalFingers(__instance.leftHand.physHand);
-                newRig.rightHandFingers = PhysicalFingersController.CreatePhysicalFingers(__instance.rightHand.physHand);
-
-                int instanceId = __instance.artOutput.GetInstanceID();
-                ArtOutputUpdatePatch.artRigToUsefulReferences.Add(instanceId, newRig);
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(FlyingGun), nameof(FlyingGun.EnableNoClip))]
-    public class OnFlyingGunClipEnable
-    {
-        public static void Postfix(FlyingGun __instance)
-        {
-            Hand targetHand = __instance.triggerGrip.GetHand();
-            ArtRig manager = targetHand.manager.physicsRig.artOutput;
-
-            int instanceId = manager.GetInstanceID();
-            BitsAndBobs refs = ArtOutputUpdatePatch.artRigToUsefulReferences[instanceId];
-            refs.leftHandFingers.SetCollisions(false);
-            refs.rightHandFingers.SetCollisions(false);
-        }
-    }
-
-    [HarmonyPatch(typeof(FlyingGun), nameof(FlyingGun.DisableNoClip))]
-    public class OnFlyingGunClipDisable
-    {
-        public static void Postfix(FlyingGun __instance, Hand hand)
-        {
-            ArtRig manager = hand.manager.physicsRig.artOutput;
-
-            int instanceId = manager.GetInstanceID();
-            BitsAndBobs refs = ArtOutputUpdatePatch.artRigToUsefulReferences[instanceId];
-            if (hand.AttachedReceiver != null)
-            {
-                refs.leftHandFingers.SetCollisions(refs.leftHandFingers.targetPhysHand.hand.AttachedReceiver == null);
-                refs.rightHandFingers.SetCollisions(refs.rightHandFingers.targetPhysHand.hand.AttachedReceiver == null);
-            }
         }
     }
 }
