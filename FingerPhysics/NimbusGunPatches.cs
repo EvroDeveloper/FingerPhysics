@@ -21,15 +21,18 @@ namespace FingerPhysics
 
         [HarmonyPatch(nameof(FlyingGun.DisableNoClip))]
         [HarmonyPostfix]
-        public static void DisableNoClipPostfix(FlyingGun __instance, Hand hand)
+        public static void DisableNoClipPostfix(FlyingGun __instance)
         {
-            ArtRig manager = hand.manager.physicsRig.artOutput;
+            Hand targetHand = __instance.triggerGrip.GetHand();
+            if(targetHand == null) return; // Hand has left the grip, so it should just do it normally.
+
+            ArtRig manager = targetHand.manager.physicsRig.artOutput;
             if(!ArtOutputUpdatePatch.TryGetReferences(manager, out var refs)) return;
 
-            if (hand.AttachedReceiver != null)
+            if (targetHand.HasAttachedObject())
             {
-                refs.leftHandFingers.SetCollisions(refs.leftHandFingers.targetPhysHand.hand.AttachedReceiver == null);
-                refs.rightHandFingers.SetCollisions(refs.rightHandFingers.targetPhysHand.hand.AttachedReceiver == null);
+                refs.leftHandFingers.SetCollisions(!refs.leftHandFingers.targetPhysHand.hand.HasAttachedObject());
+                refs.rightHandFingers.SetCollisions(!refs.rightHandFingers.targetPhysHand.hand.HasAttachedObject());
             }
         }
     }
